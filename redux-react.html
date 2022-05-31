@@ -75,6 +75,10 @@
         };
       }
 
+      /*
+       *********************** HANDLERS********************************
+       */
+
       function handleDeleteTodo(todo) {
         return (dispatch) => {
           dispatch(removeTodoAction(todo.id));
@@ -131,6 +135,19 @@
         };
       }
 
+      function handleInitalData() {
+        return (dispatch) => {
+          return Promise.all([API.fetchTodos(), API.fetchGoals()]).then(
+            ([todos, goals]) => {
+              dispatch(receiveDataAction(todos, goals));
+            }
+          );
+        };
+      }
+
+      /**
+       * ***************************MIDDLEWARE **************************
+       * ****/
       const checker = (store) => (next) => (action) => {
         if (
           action.type === ADD_TODO &&
@@ -330,11 +347,7 @@
         componentDidMount() {
           const { store } = this.props;
 
-          Promise.all([API.fetchTodos(), API.fetchGoals()]).then(
-            ([todos, goals]) => {
-              store.dispatch(receiveDataAction(todos, goals));
-            }
-          );
+          store.dispatch(handleInitalData());
 
           store.subscribe(() => this.forceUpdate());
         }
