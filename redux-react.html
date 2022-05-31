@@ -75,6 +75,53 @@
         };
       }
 
+      function handleDeleteTodo(todo) {
+        return (dispatch) => {
+          dispatch(removeTodoAction(todo.id));
+          return API.deleteTodo(todo.id).catch(() => {
+            dispatch(addTodoAction(todo));
+            alert("An error has ocurred. Try again.");
+          });
+        };
+      }
+
+      function handleToggleTodo(id) {
+        return (dispatch) => {
+          dispatch(toggleTodoAction(id));
+          return API.saveTodoToggle(id).catch(() => {
+            dispatch(toggleTodoAction(id));
+            alert("Error occur in toggle todo");
+          });
+        };
+      }
+
+      function handleAddTodo()
+
+      function handleDeleteGoal(goal){
+        return (dispatch) => {
+          dispatch(removeGoalAction(goal.id));
+          return API.deleteGoal(goal.id).catch(() => {
+            dispatch(addGoalAction(goal));
+            alert("An error occurred in goals");
+          });
+
+        }
+      }
+
+      function handleAddGoal(name, cb){
+        return (dispatch) =>{
+          return API.saveGoal(name)
+            .then((goal) => {
+              dispatch(addGoalAction(goal));
+              cb();
+            })
+            .catch(() => {
+              alert("Error adding goal");
+            });
+        }
+
+      }
+
       const checker = (store) => (next) => (action) => {
         if (
           action.type === ADD_TODO &&
@@ -99,6 +146,13 @@
         console.log("The new state: ", store.getState());
         console.groupEnd();
         return result;
+      };
+
+      const thunk = (store) => (next) => (action) => {
+        if (typeof action === "function") {
+          return action(store.dispatch);
+        }
+        return next(action);
       };
 
       //Reducer function becausenis taking in a state and an action and its reducing those two things to a brand  new state
@@ -151,7 +205,7 @@
           goals,
           loading,
         }),
-        Redux.applyMiddleware(checker, logger)
+        Redux.applyMiddleware(thunk, checker, logger)
       );
     </script>
 
@@ -185,13 +239,14 @@
           const name = this.input.value;
           this.input.value = "";
 
-          return API.saveTodo(name).then((todo) => {
-            this.props.store.dispatch(addTodoAction(todo));
-            this.input.value = "";
-          })
-          .catch(() =>{
-            alert('Problem ading todo')
-          })
+          return API.saveTodo(name)
+            .then((todo) => {
+              this.props.store.dispatch(addTodoAction(todo));
+              this.input.value = "";
+            })
+            .catch(() => {
+              alert("Problem ading todo");
+            });
 
           //line 189 is already dispatching new todo
           /* this.props.store.dispatch(
@@ -213,19 +268,11 @@
 
         //Optimistic update
         removeItem = (todo) => {
-          this.props.store.dispatch(removeTodoAction(todo.id));
-          return API.deleteTodo(todo.id).catch(() => {
-            this.props.store.dispatch(addTodoAction(todo));
-            alert("An error has ocurred. Try again.");
-          });
+          this.props.store.dispatch(handleDeleteTodo(todo));
         };
 
         toggleItem = (id) => {
-          this.props.store.dispatch(toggleTodoAction(id));
-          return API.saveTodoToggle(id).catch(() => {
-            this.props.store.dispatch(toggleTodoAction(id));
-            alert("Error occur in toggle todo");
-          });
+          this.props.store.dispatch(handleToggleTodo(id));
         };
 
         render() {
@@ -251,32 +298,27 @@
       class Goals extends React.Component {
         addItem = (e) => {
           e.preventDefault();
-          const name = this.input.value;
-          this.input.value = "";
 
-          return API.saveGoal(name).then((goal) => {
-            this.props.store.dispatch(addGoalAction(goal));
-            this.input.value = "";
-          })
-          .catch(() => {
-            alert('Error adding goal')
-          })
+          this.props.store.dispatch(handleAddGoal(
+            this.input.value,
+            () => this.input.value = ''
+            ))
 
-          /* this.props.store.dispatch(
-            addGoalAction({
-              id: generateId(),
-              name,
+
+
+
+          return API.saveGoal(this.input.value)
+            .then((goal) => {
+              this.props.store.dispatch(addGoalAction(goal));
+              this.input.value = "";
             })
-          ); */
+            .catch(() => {
+              alert("Error adding goal");
+            });
         };
 
         removeItem = (goal) => {
-          this.props.store.dispatch(removeGoalAction(goal.id));
-
-          return API.deleteGoal(goal.id).catch(() => {
-            this.props.store.dispatch(addGoalAction(goal));
-            alert("An error occurred in goals");
-          });
+          this.props.store.dispatch(handleDeleteGoal(goal))
         };
 
         render() {
